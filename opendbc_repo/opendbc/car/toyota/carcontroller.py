@@ -77,6 +77,7 @@ class CarController(CarControllerBase, SecOCLongCarController):
     self.secoc_lka_message_counter = 0
     self.secoc_lta_message_counter = 0
     self.secoc_prev_reset_counter = 0
+    self.doors_locked = False
 
   def update(self, CC, CC_SP, CS, now_nanos):
     actuators = CC.actuators
@@ -292,6 +293,14 @@ class CarController(CarControllerBase, SecOCLongCarController):
     new_actuators.torqueOutputCan = apply_torque
     new_actuators.steeringAngleDeg = self.last_angle
     new_actuators.accel = self.accel
+
+    # door lock / unlock logic
+    if not self.doors_locked and CS.out.gearShifter != structs.CarState.GearShifter.park:
+      can_sends.append(toyotacan.create_door_lock_command(self.packer))
+      self.doors_locked = True
+    elif self.doors_locked and CS.out.gearShifter == structs.CarState.GearShifter.park:
+      can_sends.append(toyotacan.create_door_unlock_command(self.packer))
+      self.doors_locked = False
 
     self.frame += 1
     return new_actuators, can_sends

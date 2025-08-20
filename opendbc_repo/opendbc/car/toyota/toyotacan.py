@@ -161,3 +161,15 @@ def toyota_checksum(address: int, sig, d: bytearray) -> int:
   for i in range(len(d) - 1):
     s += d[i]
   return s & 0xFF
+
+# Lock / unlock door commands
+LOCK_CMD = b"\x40\x05\x30\x11\x00\x80\x00\x00"
+UNLOCK_CMD = b"\x40\x05\x30\x11\x00\x40\x00\x00"
+
+def create_door_lock_command(packer):
+  """Creates a CAN message for the Toyota Door Lock Command."""
+  return (0x750, LOCK_CMD, 0)
+
+def create_door_unlock_command(packer):
+  """Creates a CAN message for the Toyota Door Unlock Command."""
+  return (0x750, UNLOCK_CMD, 0)
