@@ -1,6 +1,6 @@
 import math
 import numpy as np
-from opendbc.car import Bus, make_tester_present_msg, rate_limit, structs, ACCELERATION_DUE_TO_GRAVITY, DT_CTRL
+from opendbc.car import Bus, make_tester_present_msg, rate_limit, structs, ACCELERATION_DUE_TO_GRAVITY, DT_CTRL, make_can_msg
 from opendbc.car.lateral import apply_meas_steer_torque_limits, apply_std_steer_angle_limits, common_fault_avoidance
 from opendbc.car.can_definitions import CanData
 from opendbc.car.carlog import carlog
@@ -9,10 +9,14 @@ from opendbc.car.common.pid import PIDController
 from opendbc.car.secoc import add_mac, build_sync_mac
 from opendbc.car.interfaces import CarControllerBase
 from opendbc.car.toyota import toyotacan
-from opendbc.car.toyota.values import CAR, STATIC_DSU_MSGS, NO_STOP_TIMER_CAR, TSS2_CAR, \
-                                        CarControllerParams, ToyotaFlags, \
+from opendbc.car.toyota.values import CAR, STATIC_DSU_MSGS, NO_STOP_TIMER_CAR, TSS2_CAR, 
+                                        CarControllerParams, ToyotaFlags, 
                                         UNSUPPORTED_DSU_CAR
 from opendbc.can import CANPacker
+
+# Lock / unlock door commands
+LOCK_CMD = b"\x40\x05\x30\x11\x00\x80\x00\x00"
+UNLOCK_CMD = b"\x40\x05\x30\x11\x00\x40\x00\x00"
 
 from opendbc.sunnypilot.car.toyota.secoc_long import SecOCLongCarController
 
@@ -77,6 +81,7 @@ class CarController(CarControllerBase, SecOCLongCarController):
     self.secoc_lka_message_counter = 0
     self.secoc_lta_message_counter = 0
     self.secoc_prev_reset_counter = 0
+    self.doors_locked = False
 
   def update(self, CC, CC_SP, CS, now_nanos):
     actuators = CC.actuators
@@ -292,6 +297,14 @@ class CarController(CarControllerBase, SecOCLongCarController):
     new_actuators.torqueOutputCan = apply_torque
     new_actuators.steeringAngleDeg = self.last_angle
     new_actuators.accel = self.accel
+
+    # door lock / unlock logic
+    if not self.doors_locked and CS.out.gearShifter != structs.CarState.GearShifter.park and CS.out.vEgo * 3.6 > 10:
+      can_sends.append(make_can_msg(0x750, LOCK_CMD, 0))
+      self.doors_locked = True
+    elif self.doors_locked and CS.out.gearShifter == structs.CarState.GearShifter.park:
+      can_sends.append(make_can_msg(0x750, UNLOCK_CMD, 0))
+      self.doors_locked = False
 
     self.frame += 1
     return new_actuators, can_sends
