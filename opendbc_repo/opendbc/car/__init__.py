@@ -113,6 +113,8 @@ def get_safety_config(safety_model: structs.CarParams.SafetyModel, safety_param:
     ret.safetyParam = safety_param
   return ret
 
+def make_can_msg(addr, dat, bus):
+  return [addr, 0, dat, bus]
 
 class CanBusBase:
   offset: int

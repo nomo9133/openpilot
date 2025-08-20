@@ -9,8 +9,8 @@ from opendbc.car.common.pid import PIDController
 from opendbc.car.secoc import add_mac, build_sync_mac
 from opendbc.car.interfaces import CarControllerBase
 from opendbc.car.toyota import toyotacan
-from opendbc.car.toyota.values import CAR, STATIC_DSU_MSGS, NO_STOP_TIMER_CAR, TSS2_CAR, 
-                                        CarControllerParams, ToyotaFlags, 
+from opendbc.car.toyota.values import CAR, STATIC_DSU_MSGS, NO_STOP_TIMER_CAR, TSS2_CAR, \
+                                        CarControllerParams, ToyotaFlags, \
                                         UNSUPPORTED_DSU_CAR
 from opendbc.can import CANPacker
 
